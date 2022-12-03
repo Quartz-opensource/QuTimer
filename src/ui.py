@@ -144,7 +144,7 @@ class MessageBox:
             else:
                 self.screen.fill(self.__screen_bg)
             if x > target_x and abs(target_x - x) >= move:
-                x -= round(move * (1.1 - target_x / x) + 1)
+                x -= round(move * (1.1 - abs(target_x / x)) + 1)
             elif 0 < abs(target_x - x) < move:
                 x -= abs(target_x - x) // 3
             if abs(target_x - x) <= 5:
@@ -190,7 +190,7 @@ class MessageBox:
             else:
                 self.screen.fill(self.__screen_bg)
             if x < target_x and abs(target_x - x) >= move:
-                x += round(move * -(1.3 - target_x / x) + 1)
+                x += round(move * abs(x / target_x) + 1)
             elif 0 < abs(target_x - x) < move:
                 x += abs(target_x - x) // 3
             if abs(x - target_x) <= 5:
