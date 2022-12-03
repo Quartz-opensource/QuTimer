@@ -18,7 +18,7 @@ pygame.init()
 class MessageBox:
     def __init__(self, text: str, font_obj: pygame.font.Font, screen: pygame.Surface, height: int = None,
                  color=(0, 0, 0), bg_color=None, use_anti_aliasing: bool = True,
-                 message_type: str = "info", sep: str = "\n", title_icon_size: tuple = (70, 70),
+                 message_type: str = "info", sep: str = "\n", title_icon_size: tuple = None,
                  title_font_obj: pygame.font.Font = None, move_lens: Union[int, float] = 3, move_sleep: float = 0.03,
                  click_exit: Union[bool, FunctionType] = False):
         """
@@ -62,7 +62,9 @@ class MessageBox:
         self.__check_box = [0, 0, 0, 0]
 
         self.__config = {
-            "title-size": title_icon_size,
+            "title-size": title_icon_size if title_icon_size is not None else (
+                round(self.__title_font_obj.get_height() * 0.77),
+                round(self.__title_font_obj.get_height() * 0.77)),
         }
 
     def init(self):
@@ -109,9 +111,8 @@ class MessageBox:
         running = True
         while running:
             screen.fill("white")
-            print(x, target_x)
             if x > target_x and abs(target_x - x) >= move:
-                x -= round(move * (1.37 - target_x / x) + 1)
+                x -= round(move * (1.1 - target_x / x) + 1)
             elif 0 < abs(target_x - x) < move:
                 x -= abs(target_x - x) // 3
             if abs(target_x - x) <= 2:
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((1000, 1000))
     screen.fill("white")
     font = pygame.font.SysFont("microsoft Yahei", 70)
-    test = MessageBox("error test", font, screen, message_type="error", height=screen.get_height(), move_lens=30)
+    test = MessageBox("error test", font, screen, message_type="error", height=screen.get_height(), move_lens=15)
     test.init()
     t = Thread(target=test.enter, daemon=True)
     t.start()
