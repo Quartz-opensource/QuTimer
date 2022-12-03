@@ -42,6 +42,7 @@ class MessageBox:
         :param move_sleep: 动画移动暂停时间
         :param click_exit: 是否再点击时退出 (若为Func则在点击时调用) [bool | Func]
         """
+
         message_types_dict = appconfig.message_types
         self.__message_type = message_types_dict.get(message_type.lower(), None)
         if self.__message_type is None:
