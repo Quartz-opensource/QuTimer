@@ -16,7 +16,9 @@ pygame.init()
 
 
 class MessageBox:
-    def __init__(self, text: str, font_obj: pygame.font.Font, screen: pygame.Surface, height: int = None,
+    def __init__(self, text: str, font_obj: pygame.font.Font, screen: pygame.Surface, screen_bg: Union[
+        pygame.Surface, str, tuple, list] = "white",
+                 height: int = None,
                  color=(0, 0, 0), bg_color=None, use_anti_aliasing: bool = True,
                  message_type: str = "info", sep: str = "\n", title_icon_size: tuple = None,
                  title_font_obj: pygame.font.Font = None, move_lens: Union[int, float] = 3, move_sleep: float = 0.03,
@@ -27,6 +29,7 @@ class MessageBox:
         :param text: 显示的文本 [str]
         :param font_obj: pygame Font 对象 [pygame.font.Font]
         :param screen: 屏幕 [pygame.Surface]
+        :param screen_bg: 屏幕背景色
         :param height: 显示的右下角高度值 [int]
         :param color: 字体颜色
         :param bg_color: 字体背景颜色 ("默认无“)
@@ -48,6 +51,7 @@ class MessageBox:
         self.height = height if height is not None else screen.get_height()
         self.screen = screen
 
+        self.__screen_bg = screen_bg
         self.__click_exit = click_exit
         self.__text = text
         self.__font_config = [color, use_anti_aliasing, bg_color]
@@ -59,7 +63,7 @@ class MessageBox:
 
         self.__font_max_pos = None
         self.__message_surface = None
-        self.__check_box = [0, 0, 0, 0]
+        self.__rect: pygame.rect.Rect = pygame.rect.Rect([0, 0, 0, 0])
 
         self.__config = {
             "title-size": title_icon_size if title_icon_size is not None else (
@@ -67,7 +71,18 @@ class MessageBox:
                 round(self.__title_font_obj.get_height() * 0.77)),
         }
 
-    def init(self):
+        init_thread = Thread(target=self.__init, daemon=False)
+        init_thread.start()
+
+    @property
+    def rect(self) -> pygame.rect.Rect:
+        return self.__rect
+
+    @property
+    def check_box(self) -> pygame.rect.Rect:
+        return self.__rect
+
+    def __init(self):
         lines = self.__text.split(self.__sep)
 
         # 加上title高度
@@ -94,57 +109,94 @@ class MessageBox:
             if font_pos[0] + font_surface.get_width() > self.__font_max_pos[0]:  # 比较长度
                 self.__font_max_pos = [font_pos[0] + font_surface.get_width() + 10, font_pos[1] + 10]
 
-    def enter(self, move: int = None):
+    def enter(self):
+        t = Thread(target=self.__enter, daemon=False)
+        t.start()
+        return t
+
+    def __enter(self, move: int = None):
         """
         入场动画
         :return: None
         """
         if move is None:
             move = self.__move_lens
+
         self.__message_surface: pygame.Surface
+
         target_x = self.screen.get_width() - self.__font_max_pos[0]  # 左上角x坐标
-        target_y = self.height - self.__font_max_pos[1]  # 左上角y坐标
+        target_y = self.height - self.__font_max_pos[1] - 10  # 左上角y坐标
         if target_y < 3:
             target_y = 3
 
-        x = screen.get_width()
+        x = self.screen.get_width()
         running = True
+        pos = (0, 0)
         while running:
-            screen.fill("white")
+            if x == 0:
+                x = 1
+            if type(self.__screen_bg) == pygame.Surface:
+                self.screen.blit(self.__screen_bg, (0, 0))
+            else:
+                self.screen.fill(self.__screen_bg)
             if x > target_x and abs(target_x - x) >= move:
                 x -= round(move * (1.1 - target_x / x) + 1)
             elif 0 < abs(target_x - x) < move:
                 x -= abs(target_x - x) // 3
             if abs(target_x - x) <= 2:
-                # x = target_x
                 running = False
             pos = x, target_y
+            self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
             self.screen.blit(self.__message_surface, pos)
             if self.__move_sleep > 0:
                 sleep(self.__move_sleep)
 
+        self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
+
+    def exit(self):
+        t = Thread(target=self.__exit, daemon=False)
+        t.start()
+        return t
+
+    def __exit(self, move: int = None):
+        """
+        出场动画
+        :return: None
+        """
+        if move is None:
+            move = self.__move_lens
+
+        self.__message_surface: pygame.Surface
+
+        target_x = self.screen.get_width() + self.__font_max_pos[0]  # 左上角x坐标
+        target_y = self.height - self.__font_max_pos[1] - 10  # 左上角y坐标
+        if target_y < 3:
+            target_y = 3
+
+        x = self.__rect[0]  # 获取当前x位置
+        running = True
+        pos = self.__rect[:2]  # 当前位置
+        while running:
+            if x == 0:
+                x = 1
+            if type(self.__screen_bg) == pygame.Surface:
+                self.screen.blit(self.__screen_bg, (0, 0))
+            else:
+                self.screen.fill(self.__screen_bg)
+            if x < target_x and abs(target_x - x) >= move:
+                x += round(move * -(1.3 - target_x / x) + 1)
+            elif 0 < abs(target_x - x) < move:
+                x += abs(target_x - x) // 3
+            if abs(x - target_x) <= 2:
+                running = False
+            pos = x, target_y
+            self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
+            self.screen.blit(self.__message_surface, pos)
+            if self.__move_sleep > 0:
+                sleep(self.__move_sleep)
+
+        self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
+
 
 if __name__ == "__main__":
-    screen = pygame.display.set_mode((1000, 1000))
-    screen.fill("white")
-    font = pygame.font.SysFont("microsoft Yahei", 70)
-    test = MessageBox("error test", font, screen, message_type="error", height=screen.get_height(), move_lens=15)
-    test.init()
-    t = Thread(target=test.enter, daemon=True)
-    t.start()
-    run = True
-    while run:
-        try:
-            pygame.event.get()
-            pygame.display.update()
-            # if not t.is_alive():
-            #     sleep(0.5)
-            #     t = Thread(target=test.enter, daemon=True)
-            #     t.start()
-        except KeyboardInterrupt:
-            run = False
-            break
-    # test = MessageBox("warning test", font, screen, message_type="warning")
-    # test.init()
-    # test = MessageBox("info test", font, screen, message_type="info")
-    # test.init()
+    pass
