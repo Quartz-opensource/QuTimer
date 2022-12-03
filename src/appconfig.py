@@ -17,7 +17,7 @@ class Appconfig:
 
         # 初始化提示语
         self.message_tips = {
-            1: "运行发生错误",
+            1: "错误",
             2: "警告",
             0: "提示"
         }
