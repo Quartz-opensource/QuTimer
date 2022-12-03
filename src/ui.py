@@ -62,6 +62,7 @@ class MessageBox:
         self.__move_lens = move_lens
         self.__move_sleep = move_sleep
 
+        self.__running = True
         self.__font_max_pos = None
         self.__message_surface = None
         self.__rect: pygame.rect.Rect = pygame.rect.Rect([0, 0, 0, 0])
@@ -131,9 +132,11 @@ class MessageBox:
             target_y = 3
 
         x = self.screen.get_width()
-        running = True
+        self.__running = False
+        sleep(self.__move_sleep + 0.01)
+        self.__running = True
         pos = (0, 0)
-        while running:
+        while self.__running:
             if x == 0:
                 x = 1
             if type(self.__screen_bg) == pygame.Surface:
@@ -144,8 +147,8 @@ class MessageBox:
                 x -= round(move * (1.1 - target_x / x) + 1)
             elif 0 < abs(target_x - x) < move:
                 x -= abs(target_x - x) // 3
-            if abs(target_x - x) <= 2:
-                running = False
+            if abs(target_x - x) <= 5:
+                self.__running = False
             pos = x, target_y
             self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
             self.screen.blit(self.__message_surface, pos)
@@ -175,9 +178,11 @@ class MessageBox:
             target_y = 3
 
         x = self.__rect[0]  # 获取当前x位置
-        running = True
+        self.__running = False
+        sleep(self.__move_sleep + 0.01)
+        self.__running = True
         pos = self.__rect[:2]  # 当前位置
-        while running:
+        while self.__running:
             if x == 0:
                 x = 1
             if type(self.__screen_bg) == pygame.Surface:
@@ -188,8 +193,8 @@ class MessageBox:
                 x += round(move * -(1.3 - target_x / x) + 1)
             elif 0 < abs(target_x - x) < move:
                 x += abs(target_x - x) // 3
-            if abs(x - target_x) <= 2:
-                running = False
+            if abs(x - target_x) <= 5:
+                self.__running = False
             pos = x, target_y
             self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
             self.screen.blit(self.__message_surface, pos)
