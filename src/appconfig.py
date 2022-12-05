@@ -43,6 +43,10 @@ class Appconfig:
             }
         }
 
+        self.mgr_error_interval: float = 10
+        self.mgr_remove_error_time = 30
+        self.mgr_remove_interval: float = 3
+
     @staticmethod
     def get_loglevel(string: str, default=None):
         """
@@ -67,5 +71,23 @@ class Model:
     配置文件内容
     """
 
-    def __init__(self):
-        self.config_dict = {}
+    def __init__(self, appconfig_obj: Appconfig):
+        self.__appconfig = appconfig_obj
+        self.__config_dict = {}
+        self.error = None
+
+    def __merge_dict(self, value: dict) -> dict:
+        value = value.copy()
+        config_dict = self.__config_dict.copy()
+        value.update(config_dict)
+        return value
+
+    @property
+    def config_dict(self):
+        self.__appconfig.default_config.copy().update(self.__config_dict)  # 添加没有项
+        return self.__config_dict
+
+    @config_dict.setter
+    def config_dict(self, value: dict):
+        if type(value) == dict:  # 如果value合法
+            self.__config_dict = self.__merge_dict(value)  # 添加没有项

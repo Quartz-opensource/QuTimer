@@ -7,7 +7,7 @@ from appconfig import Appconfig, Model
 from staticTools import create_file, read_json, write_json
 
 appconfig = Appconfig()
-config = Model()
+config = Model(appconfig)
 
 
 def init_logging(loglevel):

@@ -150,6 +150,7 @@ class MessageBox:
                 target_y = 3
 
             if self.__done:
+                self.__rect = pygame.rect.Rect([0, 0, 0, 0])
                 break
             if x == 0:
                 x = 1
@@ -160,8 +161,12 @@ class MessageBox:
             if abs(target_x - x) <= 5:
                 self.__running = False
             pos = x, target_y
-            self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
-            self.screen.blit(self.__message_surface, pos)
+            if self.__done:
+                self.__rect = pygame.rect.Rect([0, 0, 0, 0])
+                break
+            else:
+                self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
+                self.screen.blit(self.__message_surface, pos)
             if self.__move_sleep > 0 and not self.__done:
                 sleep(self.__move_sleep)
 
@@ -200,6 +205,7 @@ class MessageBox:
                 target_y = 3
 
             if self.__done:
+                self.__rect = pygame.rect.Rect([0, 0, 0, 0])
                 break
             if x == 0:
                 x = 1
@@ -210,8 +216,12 @@ class MessageBox:
             if abs(x - target_x) <= 5:
                 self.__running = False
             pos = x, target_y
-            self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
-            self.screen.blit(self.__message_surface, pos)
+            if self.__done:
+                self.__rect = pygame.rect.Rect([0, 0, 0, 0])
+                break
+            else:
+                self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
+                self.screen.blit(self.__message_surface, pos)
             if self.__move_sleep > 0 and not self.__done:
                 sleep(self.__move_sleep)
 
@@ -236,6 +246,7 @@ class MessageBox:
 
     def update(self, mouse_events: list[pygame.event]):
         if self.__done:
+            self.__rect = pygame.rect.Rect([0, 0, 0, 0])
             return False
         for e in mouse_events:
             if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:  # 左键鼠标按下
@@ -250,15 +261,19 @@ class MessageBox:
                             result = self.__click_exit()
                             if result:
                                 self.__done = True
+                                self.__rect = pygame.rect.Rect([0, 0, 0, 0])
                         except Exception as e:
                             print("WARNING: click_exit func error: {}".format(e))
                     else:
                         if self.__click_exit:
                             self.__done = True
+                            self.__rect = pygame.rect.Rect([0, 0, 0, 0])
                 self.__clicked = False
 
         if not self.__done:
             self.screen.blit(self.__message_surface, self.__rect)  # 重画
+        else:
+            self.__rect = pygame.rect.Rect([0, 0, 0, 0])
 
 
 class Ui:
