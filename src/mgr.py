@@ -119,22 +119,29 @@ class Mgr:
         t.start()
         return t
 
+    def __get_tips_string(self) -> str:
+        return self.__config.config_dict.get(
+            "settings",
+            self.__appconfig.default_config["settings"]
+        ).get(
+            "text", self.__appconfig.default_config["settings"]["text"]
+        )
+
     def get_event(self) -> str:
         now = time()
         for subject_name, (start, end) in zip(*self.__subjects_list):
             if start <= now <= end:
                 for show_time in self.__config.config_dict.get("shows", self.__appconfig.default_config["shows"]):
                     remaining_time = abs(end - now)
-                    if show_time >= remaining_time and abs(show_time - remaining_time) <= 60.5:
-                        tips_string = self.__config.config_dict.get(
-                            "settings",
-                            self.__appconfig.default_config["settings"]
-                        ).get(
-                            "text", self.__appconfig.default_config["settings"]["text"]
-                        )
+                    if show_time == -1:
+                        if 0 >= remaining_time >= -60.5:
+                            tips_string = self.__get_tips_string()
+                            return "{}{}结束".format(subject_name, tips_string)
+                    elif show_time >= remaining_time and abs(show_time - remaining_time) <= 60.5:
+                        tips_string = self.__get_tips_string()
                         if show_time != 0:
-                            return "距离{}{}结束还有{}分钟"\
-                                .format(subject_name, tips_string, format(round(remaining_time/60, 1), ".1f"))
+                            return "距离{}{}结束还有{}分钟" \
+                                .format(subject_name, tips_string, format(round(remaining_time / 60, 1), ".1f"))
                         else:
                             return "{}{}开始".format(subject_name, tips_string)
         return ""
