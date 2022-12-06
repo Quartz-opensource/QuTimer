@@ -130,9 +130,9 @@ class Mgr:
     def get_event(self) -> str:
         now = time()
         for subject_name, (start, end) in zip(*self.__subjects_list):
-            if start <= now <= end:
+            if start <= now <= end + 60.5:
                 for show_time in self.__config.config_dict.get("shows", self.__appconfig.default_config["shows"]):
-                    remaining_time = abs(end - now)
+                    remaining_time = end - now
                     if show_time == -1:
                         if 0 >= remaining_time >= -60.5:
                             tips_string = self.__get_tips_string()
