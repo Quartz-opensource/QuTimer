@@ -125,7 +125,6 @@ class Mgr:
             if start <= now <= end:
                 for show_time in self.__config.config_dict.get("shows", self.__appconfig.default_config["shows"]):
                     remaining_time = abs(end - now)
-                    print(show_time, show_time - remaining_time, remaining_time)
                     if show_time >= remaining_time and abs(show_time - remaining_time) <= 60.5:
                         tips_string = self.__config.config_dict.get(
                             "settings",
