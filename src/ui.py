@@ -225,9 +225,7 @@ class MessageBox:
             if self.__move_sleep > 0 and not self.__done:
                 sleep(self.__move_sleep)
 
-        # self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
-        self.__done = True
-        self.__rect = pygame.rect.Rect([0, 0, 0, 0])  # 重置rect
+        self.__rect = pygame.rect.Rect([*pos, *self.__font_max_pos])  # 点击域 (x, y, width, height)
 
     def show(self, sec: float):
         if sec < 0:
@@ -237,6 +235,8 @@ class MessageBox:
             self.__enter()
             sleep(sec)
             self.__exit()
+            self.__done = True
+            self.__rect = pygame.rect.Rect([0, 0, 0, 0])  # 重置rect
 
         if not self.__done:
             t = Thread(target=func, args=(sec,), daemon=True)

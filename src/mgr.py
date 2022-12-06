@@ -1,7 +1,8 @@
 # 第三方包
 import logging
-from time import time
+from time import time, mktime, strptime, strftime
 from threading import Thread
+from typing import Optional
 
 # 本地包
 from init import appconfig, config
@@ -14,11 +15,17 @@ logger = logging.getLogger("mgr")
 
 class Mgr:
     def __init__(self, appconfig_obj: Appconfig, config_obj: Model):
+        self.__update_thread: Optional[Thread] = None
         self.__appconfig = appconfig_obj
         self.__config = config_obj
 
         self.__error_dict = {}
         self.__latest_del_time = time()
+        self.__shift_error = (0, {})
+        self.__subjects_list = [
+            [],
+            []
+        ]
 
     def __del_error_dict_thread(self):
         t = Thread(target=self.__del_error_dict, daemon=True)
@@ -52,10 +59,83 @@ class Mgr:
             self.__config.config_dict = info.copy()
         if abs(time() - self.__latest_del_time) > self.__appconfig.mgr_remove_interval:
             self.__del_error_dict_thread()
+        if self.__update_thread is None or not self.__update_thread.is_alive():
+            self.__update_thread = Thread(target=self.__shift_subjects_call, daemon=True)  # 更新时间戳字典
+            self.__update_thread.start()
+        if self.__shift_error[0] != 0 and abs(time() - self.__error_dict.get("shift_error", 0)) > \
+                self.__appconfig.mgr_error_interval:
+            self.__dict_to_log(self.__shift_error[1], tips="转化为时间戳")
+            self.__error_dict["shift_error"] = time()
 
+    def __shift_subjects_call(self):
+        self.__shift_error = self.__shift_subjects()
 
-if __name__ == '__main__':
-    test = Mgr(appconfig, config)
-    # while True:
-    test.read_file()
-    print(config.config_dict)
+    def __shift_subjects(self) -> tuple[int, any]:
+        """
+        将时间转为时间戳subjects
+        :return: tuple[int, any]
+        return_code: 0 -> 正常, -1 -> 未找到, -2 -> 运行时错误;
+        """
+        errors = {}
+        e_code = 0
+        subjects = self.__config.config_dict.get("subjects", None)
+
+        if subjects is None:
+            return -1, RuntimeError("Subjects not found")
+        else:
+            for k, v in list(subjects.items()):
+                k: str
+                v: list
+                if type(v) == list and len(v) == 2:
+                    try:
+                        start_timestamp = int(mktime(strptime(v[0], "%Y-%m-%d %H:%M:%S")))
+                        end_timestamp = int(mktime(strptime(v[1], "%Y-%m-%d %H:%M:%S")))
+                        self.__config.subjects[k] = [start_timestamp, end_timestamp]
+                        if k not in self.__subjects_list[0] and v not in self.__subjects_list[1]:
+                            self.__subjects_list[0].append(k)
+                            self.__subjects_list[1].append([start_timestamp, end_timestamp])
+                    except Exception as e:
+                        e_code = -2
+                        errors[k] = (RuntimeError("Subject \"{}\" start time or end time error: {}"
+                                                  .format(k, repr(e).replace("'", '"'))), e)
+                else:
+                    del subjects[k]  # 不符合预期的直接删掉
+                    e_code = -2
+                    errors[k] = (RuntimeError("Subject \"{}\" (\"{}\") not expected".format(k, v)), None)
+
+        self.__config.subjects = subjects.copy()
+        return e_code, errors
+
+    @staticmethod
+    def __dict_to_log(target_dict: dict, tips: str = ""):
+        def tmp():
+            for k, v in list(target_dict.items()):
+                try:
+                    logger.error("{}(\"{}\")错误:".format(tips, k), exc_info=v[0])
+                except Exception as e:
+                    pass
+
+        t = Thread(target=tmp, daemon=True)
+        t.start()
+        return t
+
+    def get_event(self) -> str:
+        now = time()
+        for subject_name, (start, end) in zip(*self.__subjects_list):
+            if start <= now <= end:
+                for show_time in self.__config.config_dict.get("shows", self.__appconfig.default_config["shows"]):
+                    remaining_time = abs(end - now)
+                    print(show_time, show_time - remaining_time, remaining_time)
+                    if show_time >= remaining_time and abs(show_time - remaining_time) <= 60.5:
+                        tips_string = self.__config.config_dict.get(
+                            "settings",
+                            self.__appconfig.default_config["settings"]
+                        ).get(
+                            "text", self.__appconfig.default_config["settings"]["text"]
+                        )
+                        if show_time != 0:
+                            return "距离{}{}结束还有{}分钟"\
+                                .format(subject_name, tips_string, format(round(remaining_time/60, 1), ".1f"))
+                        else:
+                            return "{}{}开始".format(subject_name, tips_string)
+        return ""

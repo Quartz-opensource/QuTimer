@@ -218,7 +218,7 @@ def write_json(filename, info: dict, encode: str = "UTF-8", mode: str = "w+"):
     error code: 0 -> 正常, -1 -> 文件读取错误, -2 -> 将dict加载为json错误
     """
     try:
-        json_info = dumps(info.copy(), indent=4, ensure_ascii=False, sort_keys=True)
+        json_info = dumps(info.copy(), indent=4, ensure_ascii=False)
     except Exception as e:
         return -2, e
 

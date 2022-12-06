@@ -1,5 +1,6 @@
 # 第三方包
 from os import path as ospath
+from time import time
 import logging
 
 # 本地包
@@ -14,7 +15,7 @@ def init_logging(loglevel):
     logging.basicConfig(level=loglevel,
                         filename="latest.log",
                         datefmt="%Y-%m-%d %H:%M:%S",
-                        format="[%(asctime)s] [%(levelname)s] Pid: %(process)d "
+                        format="[%(asctime)s:%(msecs)03d] [%(levelname)s] Pid: %(process)d "
                                "Thread: %(thread)d ThreadName: %(threadName)s"
                                " In %(filename)s, Line %(lineno)s:\n\t%(message)s ",
                         encoding="UTF-8"
@@ -35,10 +36,10 @@ else:
         log_level = appconfig.get_loglevel(appconfig.default_config["debug"]["level"])
         init_logging(log_level)
         logger = logging.getLogger("init")
-        logger.error("读取配置文件错误(已更改为默认内容): {}".format(str(json_info)))
+        logger.debug("初次读取配置文件错误(已更改为默认内容): {}".format(str(json_info)))
         return_code, err_info = write_json(appconfig.mgr_config_file, appconfig.default_config)
         if return_code != 0:
-            logger.error("写入配置文件发生错误(已更改为默认内容):", exc_info=err_info)
+            logger.error("写入配置文件发生错误(默认内容写入失败):", exc_info=err_info)
     else:  # 读取成功
         json_info: dict
         config.config_dict = json_info

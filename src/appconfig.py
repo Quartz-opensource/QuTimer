@@ -73,14 +73,9 @@ class Model:
 
     def __init__(self, appconfig_obj: Appconfig):
         self.__appconfig = appconfig_obj
-        self.__config_dict = {}
+        self.__config_dict = self.__appconfig.default_config.copy()
+        self.__subjects = {}
         self.error = None
-
-    def __merge_dict(self, value: dict) -> dict:
-        value = value.copy()
-        config_dict = self.__config_dict.copy()
-        value.update(config_dict)
-        return value
 
     @property
     def config_dict(self):
@@ -90,4 +85,12 @@ class Model:
     @config_dict.setter
     def config_dict(self, value: dict):
         if type(value) == dict:  # 如果value合法
-            self.__config_dict = self.__merge_dict(value)  # 添加没有项
+            self.__config_dict.update(value)  # 更新字典
+
+    @property
+    def subjects(self):
+        return self.__subjects
+
+    @subjects.setter
+    def subjects(self, value: dict):
+        self.__subjects = value.copy()
