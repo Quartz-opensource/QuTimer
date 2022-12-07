@@ -5,7 +5,6 @@ from threading import Thread
 from typing import Optional
 
 # 本地包
-from init import appconfig, config
 from appconfig import Appconfig, Model
 from staticTools import write_json, read_json
 
@@ -33,7 +32,7 @@ class Mgr:
         return t
 
     def __del_error_dict(self):
-        for k, v in self.__error_dict.items():
+        for k, v in self.__error_dict.copy().items():
             if abs(time() - v) >= self.__appconfig.mgr_remove_error_time:  # 大于移除时间
                 self.__error_dict.pop(k)  # 删除
 
@@ -74,7 +73,7 @@ class Mgr:
         """
         将时间转为时间戳subjects
         :return: tuple[int, any]
-        return_code: 0 -> 正常, -1 -> 未找到, -2 -> 运行时错误;
+        return_code: 0 -> 正常, -1 -> 未找到, -2 -> 运行时错误, -3 -> 列表更新错误;
         """
         errors = {}
         e_code = 0
@@ -94,6 +93,15 @@ class Mgr:
                         if k not in self.__subjects_list[0] and v not in self.__subjects_list[1]:
                             self.__subjects_list[0].append(k)
                             self.__subjects_list[1].append([start_timestamp, end_timestamp])
+                        else:
+                            try:
+                                index = self.__subjects_list[0].index(k)
+                                self.__subjects_list[0][index] = k
+                                self.__subjects_list[1][index] = [start_timestamp, end_timestamp]
+                            except Exception as e:
+                                e_code = -3
+                                errors[k] = (RuntimeError("Subject \"{}\" update error: {}"
+                                                          .format(k, repr(e).replace("'", '"'))), e)
                     except Exception as e:
                         e_code = -2
                         errors[k] = (RuntimeError("Subject \"{}\" start time or end time error: {}"
@@ -131,15 +139,22 @@ class Mgr:
         now = time()
         for subject_name, (start, end) in zip(*self.__subjects_list):
             if start <= now <= end + 60.5:
-                for show_time in self.__config.config_dict.get("shows", self.__appconfig.default_config["shows"]):
+                show_times = self.__config.config_dict.get("shows", self.__appconfig.default_config["shows"])
+                for show_time in show_times:
                     remaining_time = end - now
+                    # print(remaining_time, show_time)
+                    if "all" in show_times:  # 如果 "all" 在 show_times, 则优先显示所有
+                        show_time = "all"
                     if show_time == -1:
                         if 0 >= remaining_time >= -60.5:
                             tips_string = self.__get_tips_string()
                             return "{}{}结束".format(subject_name, tips_string)
-                    elif show_time >= remaining_time and abs(show_time - remaining_time) <= 60.5:
+                    elif show_time == "all" or (type(show_time) == float and show_time >= remaining_time and
+                                                abs(show_time - remaining_time) <= 60.5):
                         tips_string = self.__get_tips_string()
-                        if show_time != 0:
+                        if remaining_time < 0:
+                            return "{}{}结束".format(subject_name, tips_string)
+                        elif show_time != 0:
                             return "距离{}{}结束还有{}分钟" \
                                 .format(subject_name, tips_string, format(round(remaining_time / 60, 1), ".1f"))
                         else:

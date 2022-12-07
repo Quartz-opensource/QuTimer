@@ -3,12 +3,13 @@ import pygame
 import logging
 
 from types import FunctionType
-from typing import Union
+from typing import Union, Optional
 from threading import Thread
 
 from time import sleep
 
 # 本地包
+from appconfig import Appconfig
 from init import appconfig
 
 # 初始化
@@ -277,9 +278,50 @@ class MessageBox:
 
 
 class Ui:
+    def __init__(self, appconfig_obj: Appconfig):
+        self.stop = False
+
+        self.__appconfig = appconfig_obj
+        self.__screen_bg = self.__appconfig.window["bg"]
+
+        self.__font_surface = None  # 主文本surface
+        self.font_text = ""  # 主文本内容
+
+        self.__clock = pygame.time.Clock()
+
+        pygame.display.set_caption(self.__appconfig.window["title"], self.__appconfig.window["title"])  # 窗口标题
+
+        while self.__appconfig.load_fonts_thread.is_alive():  # 等待字体加载完成
+            pass
+        self.screen = pygame.display.set_mode(flags=pygame.RESIZABLE | pygame.FULLSCREEN)
+        self.screen.fill(self.__screen_bg)
+        pygame.display.flip()
+
+    def __get_font_surface(self, text: str, *args, width: int = 0, height: int = 0, **kwargs) -> Optional[pygame.Surface]:
+        fonts_dict = self.__appconfig.fonts.copy()
+        for size, font in fonts_dict.items():
+            surface: pygame.Surface = font.render(text, *args, **kwargs)
+            if surface.get_width() + width <= self.screen.get_width() and \
+                    (height == -1 or surface.get_height() + height <= self.screen.get_height()):
+                return surface.convert_alpha()
+        return None
+
+    # def __set_font_surface_thread(self, func):
+    #     self.__font_surface = func()
+
     def mainloop(self):
-        pass
-
-
-if __name__ == "__main__":
-    pass
+        while not self.stop:
+            self.__clock.tick(self.__appconfig.window["fps"])
+            self.screen.fill(self.__screen_bg)
+            # Thread(target=lambda: self.__set_font_surface_thread(
+            #     lambda: self.__get_font_surface("test~~~~", True, "black", width=300)
+            # ), daemon=True).start()
+            if len(self.font_text) > 0:
+                self.__font_surface = self.__get_font_surface(self.font_text, True, "black", width=50)
+            else:
+                self.__font_surface = None
+            if self.__font_surface is not None:
+                screen_rect = self.screen.get_rect()
+                self.screen.blit(self.__font_surface, self.__font_surface.get_rect(
+                    center=(screen_rect.centerx, round(screen_rect.centery * 0.8))))
+            pygame.display.update()

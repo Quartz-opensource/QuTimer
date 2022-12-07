@@ -1,11 +1,20 @@
 import logging
 
-from pygame import image
+from pygame import image, font
+
+font.init()  # 初始化字体加载
 from os import getenv, path as ospath
+from threading import Thread
 
 
 class Appconfig:
     def __init__(self):
+        self.window = {
+            "title": "",
+            "bg": "white",
+            "fps": 60,
+        }
+
         self.message_types = {
             "error": 1,
             "warning": 2,
@@ -46,6 +55,21 @@ class Appconfig:
         self.mgr_error_interval: float = 10
         self.mgr_remove_error_time = 30
         self.mgr_remove_interval: float = 3
+
+        self.fonts_range = range(500, 0, -10)  # 加载字体字号范围
+        self.font_file = r"resources\font\font.ttf"
+        # 字体字典 {%字号%: %pygame.font.Font%}
+        self.fonts = {}
+        self.load_fonts_thread = Thread(target=self.load_fonts, daemon=True)
+        self.load_fonts_thread.start()  # 多线程加载
+
+    def load_fonts(self):
+        for size in self.fonts_range:
+            try:
+                self.fonts[size] = font.Font(self.font_file, size)
+            except Exception as e:
+                print(e)
+        self.fonts[1] = font.Font(self.font_file, 1)
 
     @staticmethod
     def get_loglevel(string: str, default=None):

@@ -1,6 +1,6 @@
 # 第三方包
 from os import path as ospath
-from time import time
+import sys
 import logging
 
 # 本地包
@@ -12,13 +12,15 @@ config = Model(appconfig)
 
 
 def init_logging(loglevel):
+    logging.StreamHandler(sys.stdout)
     logging.basicConfig(level=loglevel,
                         filename="latest.log",
                         datefmt="%Y-%m-%d %H:%M:%S",
                         format="[%(asctime)s:%(msecs)03d] [%(levelname)s] Pid: %(process)d "
                                "Thread: %(thread)d ThreadName: %(threadName)s"
                                " In %(filename)s, Line %(lineno)s:\n\t%(message)s ",
-                        encoding="UTF-8"
+                        encoding="UTF-8",
+                        filemode="w"
                         )
 
 
