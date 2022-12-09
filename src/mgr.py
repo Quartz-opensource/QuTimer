@@ -1,8 +1,9 @@
 # 第三方包
 import logging
-from time import time, mktime, strptime, strftime
+from re import search
 from threading import Thread
-from typing import Optional
+from time import time, mktime, strptime
+from typing import Optional, Union
 
 # 本地包
 from appconfig import Appconfig, Model
@@ -134,6 +135,37 @@ class Mgr:
         ).get(
             "text", self.__appconfig.default_config["settings"]["text"]
         )
+
+    def get_config(self, keys: Union[str, list, tuple], default=None):
+        """
+        获取config指定键
+        :param keys: 以"."分割子键的字符串或者可被[]索引的数据结构
+        :param default: 默认内容
+        :return: any
+        """
+        if type(keys) == str:
+            keys = (_ for _ in keys.split("."))
+        else:
+            keys = (_ for _ in keys)
+
+        result = self.__config.config_dict.copy()  # 复制dict
+        for key in keys:
+            if type(result) == dict:
+                re_result = search(r"\[-{0,1}[0-9]+\]", key)
+                if re_result is None:
+                    result = result.get(key, self.__appconfig.default_config.get(key, default))
+                else:
+                    try:
+                        index = int(re_result.group()[1:-1])
+                        result = list(result.values())[index]
+                    except Exception as e:
+                        return default
+            elif type(result) == list or type(result) == tuple:
+                try:
+                    result = result[int(key)]
+                except Exception as e:
+                    return default
+        return result
 
     def get_event(self) -> str:
         now = time()

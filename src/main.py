@@ -1,31 +1,107 @@
 # 第三方包
 import logging
-import pygame
-import sys
-from threading import Thread
-from time import sleep
+from flask import Flask, request, render_template
+from json import dumps, dump, loads, load
 
 # 本地包
-from init import appconfig, config
+from staticTools import is_num
 from mgr import Mgr
-from ui import Ui
+from init import appconfig, config
 
-# 初始化
-logger = logging.getLogger("main")
-pygame.init()
+app = Flask(__name__, template_folder="./resources/templates", )
 
-ui = Ui(appconfig)
-mgr = Mgr(appconfig, config)
-Thread(name="pygame-Ui", target=ui.mainloop, daemon=True).start()
-quit_events = []
-while True:
-    if len(quit_events) > 0:
-        ui.stop = True
-        sys.exit(0)
-    # print(config.config_dict, mgr.__dict__)
+
+@app.route("/")
+def index():
+    result = {
+        "code": 200,
+        "msg": "ok",
+        "result": ""
+    }
+    return dumps(result, ensure_ascii=False)
+
+
+@app.route("/api/get_config")
+def get_config():
     mgr.read_file()
-    # print(config.config_dict)
-    ui.font_text = mgr.get_event()
-    # pygame.display.update()
-    quit_events = pygame.event.get(pygame.QUIT)
-    sleep(0.1)
+    result = {
+        "code": 200,
+        "msg": "ok",
+        "result": config.config_dict
+    }
+    return dumps(result, ensure_ascii=False)
+
+
+@app.route("/api/get_key")
+def get_key():
+    key = request.values.get("key")
+    default = request.values.get("default")
+    if default is None:
+        default = ""
+    mgr.read_file()
+    if key is not None:
+        result = {
+            "code": 200,
+            "msg": "ok",
+            "result": mgr.get_config(key, default)
+        }
+    else:
+        result = {
+            "code": 400,
+            "msg": "argument 'key' not found",
+            "result": ""
+        }
+    return dumps(result, ensure_ascii=False)
+
+
+@app.route("/api/get_event")
+def get_event():
+    mgr.read_file()
+    result = {
+        "code": 200,
+        "msg": "ok",
+        "result": mgr.get_event()
+    }
+    return dumps(result, ensure_ascii=False)
+
+
+@app.route("/api/set_config")
+def set_config():
+    value = request.values.get("value")
+    if value is not None:
+        try:
+            value = loads(value)
+        except Exception as e:
+            result = {
+                "code": 400,
+                "msg": "error: {}".format(repr(e)),
+                "result": ""
+            }
+            return dumps(result, ensure_ascii=False)
+    else:
+        result = {
+            "code": 400,
+            "msg": "argument 'value' not found",
+            "result": ""
+        }
+        return dumps(result, ensure_ascii=False)
+    config.config_dict = value
+    mgr.write_file()
+    mgr.read_file()
+    result = {
+        "code": 200,
+        "msg": "ok",
+        "result": ""
+    }
+    return dumps(result, ensure_ascii=False)
+
+
+if __name__ == "__main__":
+    mgr = Mgr(appconfig, config)
+    mgr.read_file()
+    port = mgr.get_config("debug.port")
+    if port is not None and is_num(port, _type="int"):
+        app.run(host=appconfig.website.get("host", "0.0.0.0"), port=port, debug=appconfig.website.get("debug", False))
+    else:
+        app.run(host=appconfig.website.get("host", "0.0.0.0"), port=appconfig.website.get("default-port", None),
+                debug=appconfig.website.get("debug", False))
