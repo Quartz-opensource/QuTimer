@@ -16,7 +16,7 @@ result = {
 result = {
         "code": 200,
         "msg": "ok",
-        "result": ""
+        "result": "{你请求的内容}"
     }
 ```
 
