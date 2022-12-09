@@ -1,8 +1,8 @@
 import logging
 
-# from pygame import image.disable, font
+# from pygame import image.disable, font.disable
 
-# font.init()  # 初始化字体加载
+# font.disable.init()  # 初始化字体加载
 from os import getenv, path as ospath
 from threading import Thread
 
@@ -64,8 +64,8 @@ class Appconfig:
         self.mgr_remove_interval: float = 3
 
         # self.fonts_range = range(500, 0, -10)  # 加载字体字号范围
-        # self.font_file = r"resources\font\font.ttf"
-        # # 字体字典 {%字号%: %pygame.font.Font%}
+        # self.font_file = r"resources\font.disable\font.disable.ttf"
+        # # 字体字典 {%字号%: %pygame.font.disable.Font%}
         # self.fonts = {}
         # self.load_fonts_thread = Thread(target=self.load_fonts, daemon=True)
         # self.load_fonts_thread.start()  # 多线程加载
@@ -73,10 +73,10 @@ class Appconfig:
     # def load_fonts(self):
     #     for size in self.fonts_range:
     #         try:
-    #             self.fonts[size] = font.Font(self.font_file, size)
+    #             self.fonts[size] = font.disable.Font(self.font_file, size)
     #         except Exception as e:
     #             print(e)
-    #     self.fonts[1] = font.Font(self.font_file, 1)
+    #     self.fonts[1] = font.disable.Font(self.font_file, 1)
 
     @staticmethod
     def get_loglevel(string: str, default=None):
