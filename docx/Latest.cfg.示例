@@ -12,6 +12,7 @@
     "in-desktop": false // 是否内嵌在桌面中
   },
   "debug": {
-    "level": "INFO"  // 日志输出等级 (不支持热加载)
+    "level": "INFO",  // 日志输出等级 (不支持热加载)
+    "port": null //  服务器端口， null默认(1145)
   }
 }

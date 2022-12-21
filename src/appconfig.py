@@ -43,9 +43,9 @@ class Appconfig:
 
         appdata = getenv("appdata", None)
         if appdata is not None:
-            self.mgr_config_file = ospath.join(appdata, "./Timer/Config/Latest.cfg")
+            self.mgr_config_file = ospath.join(appdata, "./QuTimer/Config/Latest.cfg")
         else:
-            self.mgr_config_file = "./Timer/Config/Latest.cfg"
+            self.mgr_config_file = "./QuTimer/Config/Latest.cfg"
 
         self.default_config = {
             "subjects": {},

@@ -1,7 +1,8 @@
 # 第三方包
-import logging
-from flask import Flask, request, render_template
-from json import dumps, dump, loads, load
+from threading import Thread
+from time import sleep
+from json import dumps, loads
+from flask import Flask, request
 
 # 本地包
 from staticTools import is_num
@@ -21,7 +22,7 @@ def index():
     return dumps(result, ensure_ascii=False)
 
 
-@app.route("/api/get_config")
+@app.route("/api/get_config/")
 def get_config():
     mgr.read_file()
     result = {
@@ -32,7 +33,7 @@ def get_config():
     return dumps(result, ensure_ascii=False)
 
 
-@app.route("/api/get_key")
+@app.route("/api/get_key/")
 def get_key():
     key = request.values.get("key")
     default = request.values.get("default")
@@ -54,7 +55,7 @@ def get_key():
     return dumps(result, ensure_ascii=False)
 
 
-@app.route("/api/get_event")
+@app.route("/api/get_event/")
 def get_event():
     mgr.read_file()
     result = {
@@ -65,7 +66,7 @@ def get_event():
     return dumps(result, ensure_ascii=False)
 
 
-@app.route("/api/set_config")
+@app.route("/api/set_config/")
 def set_config():
     value = request.values.get("value")
     if value is not None:
@@ -96,9 +97,27 @@ def set_config():
     return dumps(result, ensure_ascii=False)
 
 
+@app.errorhandler(404)  # 404 界面
+def error_404():
+    result = {
+        "code": 400,
+        "msg": "page not found: 404",
+        "result": ""
+    }
+    return dumps(result, ensure_ascii=False)
+
+
+def reload_config():
+    while True:
+        mgr.read_file()
+        sleep(0.1)
+
+
 if __name__ == "__main__":
     mgr = Mgr(appconfig, config)
-    mgr.read_file()
+    reload_thread = Thread(target=reload_config, daemon=True)
+    reload_thread.start()
+
     port = mgr.get_config("debug.port")
     if port is not None and is_num(port, _type="int"):
         app.run(host=appconfig.website.get("host", "0.0.0.0"), port=port, debug=appconfig.website.get("debug", False))
