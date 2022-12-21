@@ -98,7 +98,7 @@ def set_config():
 
 
 @app.errorhandler(404)  # 404 界面
-def error_404():
+def error_404(err_info):
     result = {
         "code": 400,
         "msg": "page not found: 404",
